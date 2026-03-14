@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Личный чат</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══ ЭКРАН ВХОДА ═══ -->
+  <div id="login-screen" class="screen active">
+    <div class="login-box">
+      <div class="login-icon">✦</div>
+      <h2>ЛИЧНЫЙ ЧАТ</h2>
+      <p class="subtitle">только вы двое</p>
+
+      <!-- Выбор аватара на экране входа -->
+      <div class="avatar-pick-wrap">
+        <div class="avatar-pick" id="login-avatar-pick">
+          <span class="avatar-pick-icon">📷</span>
+          <span class="avatar-pick-hint">Выбрать фото</span>
+        </div>
+        <input type="file" id="login-avatar-input" accept="image/*" hidden />
+      </div>
+
+      <input id="name-input" type="text" placeholder="Ваше имя..." maxlength="20" />
+      <button id="login-btn">ВОЙТИ</button>
+    </div>
+  </div>
+
+  <!-- ═══ ЭКРАН ЧАТА ═══ -->
+  <div id="chat-screen" class="screen">
+
+    <!-- Шапка -->
+    <header>
+      <div class="header-left">
+        <!-- Аватар собеседника -->
+        <div class="hdr-avatar" id="other-avatar-wrap">
+          <img id="other-avatar-img" src="" alt="" hidden />
+          <span id="other-avatar-letter">?</span>
+        </div>
+        <div class="header-info">
+          <div class="header-name" id="other-name">Ожидание...</div>
+          <div class="header-status" id="other-status">нет собеседника</div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Статус -->
+        <div class="status-wrapper" id="status-wrapper">
+          <button class="status-btn" id="status-btn">
+            <span id="my-status-emoji">🏠</span>
+            <span id="my-status-label">Дома</span>
+            <span class="arrow">▾</span>
+          </button>
+          <div class="status-dropdown" id="status-dropdown">
+            <div class="dropdown-title">Где вы сейчас?</div>
+          </div>
+        </div>
+
+        <!-- Мой аватар + имя (кликабельно для редактирования) -->
+        <div class="my-profile" id="my-profile-btn">
+          <div class="hdr-avatar small" id="my-avatar-wrap">
+            <img id="my-avatar-img" src="" alt="" hidden />
+            <span id="my-avatar-letter">?</span>
+          </div>
+          <span id="display-username">...</span>
+          <span class="edit-hint">✏️</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Модальное окно редактирования профиля -->
+    <div class="modal-overlay hidden" id="profile-modal">
+      <div class="modal-box">
+        <div class="modal-title">Мой профиль</div>
+
+        <!-- Большой аватар с возможностью смены -->
+        <div class="modal-avatar-wrap">
+          <div class="modal-avatar" id="modal-avatar-preview">
+            <img id="modal-avatar-img" src="" alt="" hidden />
+            <span id="modal-avatar-letter">?</span>
+            <div class="modal-avatar-overlay">📷</div>
+          </div>
+          <input type="file" id="modal-avatar-input" accept="image/*" hidden />
+        </div>
+
+        <label class="modal-label">Имя</label>
+        <input type="text" id="modal-name-input" maxlength="20" />
+
+        <div class="modal-actions">
+          <button id="modal-cancel-btn" class="btn-secondary">Отмена</button>
+          <button id="modal-save-btn" class="btn-primary">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Сообщения -->
+    <div class="messages" id="messages">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">✦</div>
+        Начните разговор<br/>
+        <small>Используйте эмодзи 😊 и стикеры 🎭</small>
+      </div>
+    </div>
+
+    <!-- Панель эмодзи -->
+    <div class="picker-panel hidden" id="emoji-panel">
+      <div class="panel-tabs" id="emoji-tabs"></div>
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+
+    <!-- Панель стикеров -->
+    <div class="picker-panel hidden" id="sticker-panel">
+      <div class="picker-panel-title">Стикеры</div>
+      <div class="panel-tabs" id="sticker-tabs"></div>
+      <div class="sticker-grid" id="sticker-grid"></div>
+    </div>
+
+    <!-- Ввод -->
+    <div class="input-bar">
+      <button class="tool-btn" id="emoji-btn" title="Эмодзи">😊</button>
+      <button class="tool-btn" id="sticker-btn" title="Стикеры">🎭</button>
+      <textarea id="msg-input" placeholder="Написать..." rows="1"></textarea>
+      <button id="send-btn">➤</button>
+    </div>
+
+  </div>
+
+  <!-- Попап реакций -->
+  <div class="reaction-popup hidden" id="reaction-popup"></div>
+
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
