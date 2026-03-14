@@ -450,10 +450,10 @@ msgInputEl.addEventListener("input", () => {
   msgInputEl.style.height = Math.min(msgInputEl.scrollHeight, 120) + "px";
 });
 msgInputEl.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-sendBtn.addEventListener("click", sendMessage);
+sendBtn.addEventListener("click", () => sendMessage());
 
 async function sendMessage(text, type = "text") {
-  const content = text ?? msgInputEl.value.trim();
+  const content = (typeof text === "string") ? text : msgInputEl.value.trim();
   if (!content || !username) return;
   await push(ref(db, "messages"), { author: username, text: content, type: type || "text", ts: Date.now() });
   if (!text) {
