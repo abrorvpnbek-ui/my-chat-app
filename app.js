@@ -285,8 +285,10 @@ function setStatus(loc) {
   document.querySelectorAll(".status-option").forEach(btn => {
     const active = btn.dataset.id === loc.id;
     btn.classList.toggle("active", active);
-    btn.innerHTML = `<span class="loc-emoji">${loc.emoji}</span><span>${loc.label}</span>${active ? '<span class="check">✓</span>' : ""}`;
-    btn.addEventListener("click", () => setStatus(loc));
+    const btnLoc = LOCATIONS.find(l => l.id === btn.dataset.id);
+    if (btnLoc) {
+      btn.innerHTML = `<span class="loc-emoji">${btnLoc.emoji}</span><span>${btnLoc.label}</span>${active ? '<span class="check">\u2713</span>' : ""}`;
+    }
   });
   statusDropdown.classList.remove("open");
   publishProfile();
