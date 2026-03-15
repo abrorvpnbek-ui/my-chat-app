@@ -1,7 +1,13 @@
 import { db } from "./firebase.js";
 import {
-  ref, push, onValue, remove, update, set, get
+  ref, push, onValue, remove, update, set, get, onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ─── Аккаунты ──────────────────────────────────────────────
+const ACCOUNTS = {
+  "А": { password: "a1603", displayName: "А" },
+  "K": { password: "к1106", displayName: "K" },
+};
 
 // ─── Константы ─────────────────────────────────────────────
 const LOCATIONS = [
@@ -30,20 +36,20 @@ const STICKER_PACKS = [
 const QUICK_REACTIONS = ["❤️","😂","👍","😮","😢","🔥","🥺","🤯"];
 
 // ─── Состояние ─────────────────────────────────────────────
-let username   = localStorage.getItem("chat_username") || "";
-let myAvatar   = localStorage.getItem("chat_avatar")   || "";   // base64
-let myStatus   = JSON.parse(localStorage.getItem("chat_status") || "null") || LOCATIONS[0];
-let emojiTab   = 0;
-let stickerTab = 0;
-
-// Кэш аватаров собеседника (имя → base64)
+let username  = localStorage.getItem("chat_username") || "";
+let myAvatar  = localStorage.getItem("chat_avatar")   || "";
+let myStatus  = JSON.parse(localStorage.getItem("chat_status") || "null") || LOCATIONS[0];
+let emojiTab  = 0;
+let stickerTab= 0;
 const avatarCache = {};
 
 // ─── DOM ───────────────────────────────────────────────────
 const loginScreen       = document.getElementById("login-screen");
 const chatScreen        = document.getElementById("chat-screen");
 const nameInputEl       = document.getElementById("name-input");
+const passInputEl       = document.getElementById("pass-input");
 const loginBtn          = document.getElementById("login-btn");
+const loginError        = document.getElementById("login-error");
 const loginAvatarPick   = document.getElementById("login-avatar-pick");
 const loginAvatarInput  = document.getElementById("login-avatar-input");
 
@@ -59,7 +65,6 @@ const otherNameEl       = document.getElementById("other-name");
 const otherStatusEl     = document.getElementById("other-status");
 
 const myProfileBtn      = document.getElementById("my-profile-btn");
-const myAvatarWrap      = document.getElementById("my-avatar-wrap");
 const myAvatarImg       = document.getElementById("my-avatar-img");
 const myAvatarLetter    = document.getElementById("my-avatar-letter");
 const displayUsername   = document.getElementById("display-username");
@@ -91,9 +96,7 @@ const reactionPopup     = document.getElementById("reaction-popup");
 // ─── Утилиты ───────────────────────────────────────────────
 const formatTime = ts => new Date(ts).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 const initial    = name => name ? name[0].toUpperCase() : "?";
-const userSlot   = name => "slot_" + (name.charCodeAt(0) % 4);
 
-// Сжать изображение до base64 (max 120×120, качество 0.7)
 function compressImage(file) {
   return new Promise(resolve => {
     const reader = new FileReader();
@@ -104,7 +107,6 @@ function compressImage(file) {
         const canvas = document.createElement("canvas");
         canvas.width = size; canvas.height = size;
         const ctx = canvas.getContext("2d");
-        // Crop to square
         const min = Math.min(img.width, img.height);
         const sx  = (img.width  - min) / 2;
         const sy  = (img.height - min) / 2;
@@ -117,7 +119,6 @@ function compressImage(file) {
   });
 }
 
-// Применить аватар к элементу (img + letter)
 function applyAvatar(imgEl, letterEl, avatarB64, name) {
   if (avatarB64) {
     imgEl.src = avatarB64;
@@ -140,14 +141,12 @@ function init() {
   myStatusEmoji.textContent   = myStatus.emoji;
   myStatusLabel.textContent   = myStatus.label;
 
-  // Превью аватара на экране входа
   loginAvatarPick.addEventListener("click", () => loginAvatarInput.click());
   loginAvatarInput.addEventListener("change", async e => {
     const file = e.target.files[0];
     if (!file) return;
     const b64 = await compressImage(file);
     myAvatar = b64;
-    // Показываем превью
     let img = loginAvatarPick.querySelector("img");
     if (!img) {
       img = document.createElement("img");
@@ -162,15 +161,30 @@ function init() {
   if (username) showChat();
 }
 
-// ─── Вход ──────────────────────────────────────────────────
+// ─── Вход с паролем ────────────────────────────────────────
 loginBtn.addEventListener("click", doLogin);
-nameInputEl.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+nameInputEl.addEventListener("keydown", e => { if (e.key === "Enter") passInputEl.focus(); });
+passInputEl.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
 
 function doLogin() {
-  const name = nameInputEl.value.trim();
-  if (!name) return;
-  username = name;
-  localStorage.setItem("chat_username", name);
+  const login    = nameInputEl.value.trim();
+  const password = passInputEl.value.trim();
+
+  const account = ACCOUNTS[login];
+  if (!account) {
+    loginError.textContent = "Неверный логин";
+    loginError.style.display = "block";
+    return;
+  }
+  if (account.password !== password) {
+    loginError.textContent = "Неверный пароль";
+    loginError.style.display = "block";
+    return;
+  }
+
+  loginError.style.display = "none";
+  username = account.displayName;
+  localStorage.setItem("chat_username", username);
   if (myAvatar) localStorage.setItem("chat_avatar", myAvatar);
   showChat();
 }
@@ -181,14 +195,39 @@ function showChat() {
   applyAvatar(myAvatarImg, myAvatarLetter, myAvatar, username);
   displayUsername.textContent = username;
   subscribeMessages();
-  subscribeStatuses();
+  subscribeProfiles();
   publishProfile();
+  setupOnlinePresence();
 }
 
-// ─── Профиль (аватар + имя) → Firebase ────────────────────
+// ─── Онлайн-присутствие ────────────────────────────────────
+function setupOnlinePresence() {
+  const onlineRef = ref(db, `online/${username}`);
+  set(onlineRef, true);
+  onDisconnect(onlineRef).remove();
+
+  // Слушаем онлайн собеседника
+  onValue(ref(db, "online"), snap => {
+    const data = snap.val() || {};
+    const otherOnline = Object.keys(data).some(u => u !== username);
+    const dot = document.getElementById("online-dot");
+    if (dot) {
+      dot.style.background = otherOnline ? "#22c55e" : "#55556a";
+      dot.title = otherOnline ? "онлайн" : "не в сети";
+    }
+    // Обновить статус текст
+    const currentOtherName = otherNameEl.textContent;
+    if (currentOtherName && currentOtherName !== "Ожидание...") {
+      const statusText = otherStatusEl.textContent.split("•")[0].trim();
+      otherStatusEl.innerHTML = `${statusText} <span id="online-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${otherOnline ? '#22c55e' : '#55556a'};margin-left:4px;vertical-align:middle;"></span>`;
+    }
+  });
+}
+
+// ─── Профиль ───────────────────────────────────────────────
 function publishProfile() {
   if (!username) return;
-  set(ref(db, `profiles/${userSlot(username)}`), {
+  set(ref(db, `profiles/${username}`), {
     name:   username,
     avatar: myAvatar || "",
     ...myStatus,
@@ -196,33 +235,34 @@ function publishProfile() {
   });
 }
 
-function subscribeStatuses() {
+function subscribeProfiles() {
   onValue(ref(db, "profiles"), snap => {
     const data = snap.val() || {};
     const others = Object.values(data).filter(p => p.name !== username);
     if (others.length > 0) {
       const o = others[0];
-      // Обновить шапку
       otherNameEl.textContent = o.name;
-      otherStatusEl.textContent = `${o.emoji || ""} ${o.label || ""}`.trim() || "онлайн";
+      const isOnline = document.getElementById("online-dot");
+      const onlineDotHtml = isOnline ? isOnline.outerHTML : `<span id="online-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#55556a;margin-left:4px;vertical-align:middle;"></span>`;
+      otherStatusEl.innerHTML = `${o.emoji || ""} ${o.label || ""}`.trim() + " " + onlineDotHtml;
       applyAvatar(otherAvatarImg, otherAvatarLetter, o.avatar, o.name);
-      // Кэш
       avatarCache[o.name] = o.avatar || "";
     } else {
-      otherNameEl.textContent   = "Ожидание...";
-      otherStatusEl.textContent = "нет собеседника";
+      otherNameEl.textContent = "Ожидание...";
+      otherStatusEl.innerHTML = `нет собеседника`;
       applyAvatar(otherAvatarImg, otherAvatarLetter, "", "?");
     }
   });
 }
 
-// ─── Модалка профиля ───────────────────────────────────────
+// ─── Профиль модалка ───────────────────────────────────────
 myProfileBtn.addEventListener("click", openProfileModal);
 modalCancelBtn.addEventListener("click", () => profileModal.classList.add("hidden"));
 profileModal.addEventListener("click", e => { if (e.target === profileModal) profileModal.classList.add("hidden"); });
 
 function openProfileModal() {
   modalNameInput.value = username;
+  modalNameInput.disabled = true; // имя менять нельзя — это логин
   applyAvatar(modalAvatarImg, modalAvatarLetter, myAvatar, username);
   profileModal.classList.remove("hidden");
 }
@@ -237,28 +277,8 @@ modalAvatarInput.addEventListener("change", async e => {
 });
 
 modalSaveBtn.addEventListener("click", async () => {
-  const newName = modalNameInput.value.trim();
-  if (!newName) return;
-
-  // Сохраняем аватар
   if (myAvatar) localStorage.setItem("chat_avatar", myAvatar);
-  applyAvatar(myAvatarImg, myAvatarLetter, myAvatar, newName);
-
-  // Меняем имя если изменилось
-  if (newName !== username) {
-    const snap = await new Promise(res => onValue(ref(db, "messages"), res, { onlyOnce: true }));
-    const data = snap.val() || {};
-    const upd  = {};
-    Object.entries(data).forEach(([id, msg]) => {
-      if (msg.author === username) upd[`messages/${id}/author`] = newName;
-    });
-    if (Object.keys(upd).length) await update(ref(db), upd);
-    await remove(ref(db, `profiles/${userSlot(username)}`));
-    username = newName;
-    localStorage.setItem("chat_username", newName);
-    displayUsername.textContent = newName;
-  }
-
+  applyAvatar(myAvatarImg, myAvatarLetter, myAvatar, username);
   publishProfile();
   profileModal.classList.add("hidden");
 });
@@ -270,8 +290,13 @@ function buildStatusDropdown() {
     btn.className = "status-option" + (loc.id === myStatus.id ? " active" : "");
     btn.dataset.id = loc.id;
     btn.innerHTML = `<span class="loc-emoji">${loc.emoji}</span><span>${loc.label}</span>${loc.id === myStatus.id ? '<span class="check">✓</span>' : ""}`;
-    btn.addEventListener("click", () => setStatus(loc));
     statusDropdown.appendChild(btn);
+  });
+  statusDropdown.addEventListener("click", e => {
+    const btn = e.target.closest(".status-option");
+    if (!btn) return;
+    const loc = LOCATIONS.find(l => l.id === btn.dataset.id);
+    if (loc) setStatus(loc);
   });
 }
 
@@ -283,12 +308,11 @@ function setStatus(loc) {
   myStatusEmoji.textContent = loc.emoji;
   myStatusLabel.textContent = loc.label;
   document.querySelectorAll(".status-option").forEach(btn => {
-    const active = btn.dataset.id === loc.id;
-    btn.classList.toggle("active", active);
     const btnLoc = LOCATIONS.find(l => l.id === btn.dataset.id);
-    if (btnLoc) {
-      btn.innerHTML = `<span class="loc-emoji">${btnLoc.emoji}</span><span>${btnLoc.label}</span>${active ? '<span class="check">\u2713</span>' : ""}`;
-    }
+    if (!btnLoc) return;
+    const active = btnLoc.id === loc.id;
+    btn.classList.toggle("active", active);
+    btn.innerHTML = `<span class="loc-emoji">${btnLoc.emoji}</span><span>${btnLoc.label}</span>${active ? '<span class="check">✓</span>' : ""}`;
   });
   statusDropdown.classList.remove("open");
   publishProfile();
@@ -320,40 +344,43 @@ function renderMessages(msgs) {
     const groupEl = document.createElement("div");
     groupEl.className = `msg-group ${isMine ? "mine" : "theirs"}`;
 
-    // Имя над первым сообщением
     const authorEl = document.createElement("div");
     authorEl.className = "msg-author";
     authorEl.textContent = author;
     groupEl.appendChild(authorEl);
 
-    // Аватар для группы
     const av     = isMine ? myAvatar : (avatarCache[author] || "");
-    const avName = author;
 
     group.forEach((msg, idx) => {
       const isSticker = msg.type === "sticker";
       const rowEl = document.createElement("div");
       rowEl.className = "msg-row";
 
-      // Аватар (только рядом с последним в группе, остальные — невидимые)
       const avatarEl = document.createElement("div");
       avatarEl.className = "msg-avatar" + (idx < group.length - 1 ? " invisible" : "");
       if (av) {
         const img = document.createElement("img");
-        img.src = av; img.alt = avName;
+        img.src = av; img.alt = author;
         avatarEl.appendChild(img);
       } else {
-        avatarEl.textContent = initial(avName);
+        avatarEl.textContent = initial(author);
       }
 
-      // Пузырь
       const bubble = document.createElement("div");
       bubble.className = "msg-bubble" + (isSticker ? " sticker" : (idx > 0 ? " grouped" : ""));
       bubble.textContent = msg.text;
-      bubble.addEventListener("click",       e => { e.stopPropagation(); openReactionPopup(msg.id, bubble); });
-      bubble.addEventListener("contextmenu", e => { e.preventDefault();  openReactionPopup(msg.id, bubble); });
 
-      // Удалить
+      // Фикс реакций: сохраняем msgId в closure через data-атрибут
+      bubble.dataset.msgId = msg.id;
+      bubble.addEventListener("click", e => {
+        e.stopPropagation();
+        openReactionPopup(bubble.dataset.msgId, bubble);
+      });
+      bubble.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        openReactionPopup(bubble.dataset.msgId, bubble);
+      });
+
       const delBtn = document.createElement("button");
       delBtn.className = "delete-btn";
       delBtn.textContent = "✕";
@@ -372,7 +399,6 @@ function renderMessages(msgs) {
       groupEl.appendChild(rowEl);
     });
 
-    // Блок реакций для каждого сообщения
     group.forEach(msg => {
       const rRow = document.createElement("div");
       rRow.className = "reactions-row";
@@ -380,7 +406,6 @@ function renderMessages(msgs) {
       groupEl.appendChild(rRow);
     });
 
-    // Время
     const timeEl = document.createElement("div");
     timeEl.className = "msg-time";
     timeEl.textContent = formatTime(group[group.length - 1].ts);
@@ -401,7 +426,8 @@ function subscribeReactions(msgs) {
       const rowEl = document.getElementById(`reactions-${msg.id}`);
       if (!rowEl) return;
       rowEl.innerHTML = "";
-      const msgReactions = data[msg.id.toString().replace(/\./g,"_")] || {};
+      const safeId = msg.id.toString().replace(/\./g,"_");
+      const msgReactions = data[safeId] || {};
       Object.entries(msgReactions).forEach(([emoji, users]) => {
         if (!users || !Object.keys(users).length) return;
         const userList = Object.values(users);
@@ -409,7 +435,8 @@ function subscribeReactions(msgs) {
         const chip = document.createElement("button");
         chip.className = "reaction-chip" + (iMine ? " mine-reaction" : "");
         chip.innerHTML = `${emoji} <span class="count">${userList.length}</span>`;
-        chip.addEventListener("click", () => toggleReaction(msg.id, emoji));
+        const capturedMsgId = msg.id;
+        chip.addEventListener("click", () => toggleReaction(capturedMsgId, emoji));
         rowEl.appendChild(chip);
       });
     });
@@ -418,10 +445,12 @@ function subscribeReactions(msgs) {
 
 function openReactionPopup(msgId, anchor) {
   reactionPopup.innerHTML = "";
+  reactionPopup.dataset.msgId = msgId;
   QUICK_REACTIONS.forEach(emoji => {
     const btn = document.createElement("button");
     btn.textContent = emoji;
-    btn.addEventListener("click", () => { toggleReaction(msgId, emoji); closeReactionPopup(); });
+    const capturedMsgId = msgId;
+    btn.addEventListener("click", () => { toggleReaction(capturedMsgId, emoji); closeReactionPopup(); });
     reactionPopup.appendChild(btn);
   });
   const rect = anchor.getBoundingClientRect();
@@ -458,13 +487,13 @@ async function sendMessage(text, type = "text") {
   const content = (typeof text === "string") ? text : msgInputEl.value.trim();
   if (!content || !username) return;
   await push(ref(db, "messages"), { author: username, text: content, type: type || "text", ts: Date.now() });
-  if (!text) {
+  if (typeof text !== "string") {
     msgInputEl.value = ""; msgInputEl.style.height = "auto";
     sendBtn.classList.remove("ready"); msgInputEl.focus();
   }
 }
 
-// ─── Эмодзи пикер ──────────────────────────────────────────
+// ─── Эмодзи ────────────────────────────────────────────────
 function buildEmojiPicker() {
   EMOJI_CATS.forEach((cat, i) => {
     const btn = document.createElement("button");
@@ -486,7 +515,7 @@ function renderEmojiGrid() {
 }
 emojiBtnEl.addEventListener("click", e => { e.stopPropagation(); const open = !emojiPanel.classList.contains("hidden"); closeAllPickers(); if (!open) { emojiPanel.classList.remove("hidden"); emojiBtnEl.classList.add("active"); } });
 
-// ─── Стикер пикер ──────────────────────────────────────────
+// ─── Стикеры ───────────────────────────────────────────────
 function buildStickerPicker() {
   STICKER_PACKS.forEach((pack, i) => {
     const btn = document.createElement("button");
