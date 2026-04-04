@@ -1,190 +1,155 @@
 import { db } from "./firebase.js";
 import {
-  ref, push, onValue, remove, update, set, get, onDisconnect
+  ref, push, onValue, remove, set, get, onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// ─── Аккаунты ──────────────────────────────────────────────
-const ACCOUNTS = {
-  "А": { password: "a1603", displayName: "А" },
-  "K": { password: "к1106", displayName: "K" },
-};
-
-// ─── Константы ─────────────────────────────────────────────
 const LOCATIONS = [
-  { id: "home",      emoji: "🏠", label: "Дома" },
-  { id: "room",      emoji: "🛋️", label: "В комнате" },
-  { id: "uni",       emoji: "🎓", label: "В универе" },
-  { id: "street",    emoji: "🚶", label: "На улице" },
-  { id: "cafe",      emoji: "☕", label: "В кафе" },
-  { id: "transport", emoji: "🚌", label: "В транспорте" },
-  { id: "gym",       emoji: "🏋️", label: "В зале" },
-  { id: "sleep",     emoji: "😴", label: "Сплю" },
+  { id:"home",      emoji:"🏠", label:"Дома" },
+  { id:"room",      emoji:"🛋️", label:"В комнате" },
+  { id:"uni",       emoji:"🎓", label:"В универе" },
+  { id:"street",    emoji:"🚶", label:"На улице" },
+  { id:"cafe",      emoji:"☕", label:"В кафе" },
+  { id:"transport", emoji:"🚌", label:"В транспорте" },
+  { id:"gym",       emoji:"🏋️", label:"В зале" },
+  { id:"sleep",     emoji:"😴", label:"Сплю" },
 ];
 
 const EMOJI_CATS = [
-  { tab: "😊", list: ["😀","😂","🥰","😍","🤩","😎","🥺","😭","😤","😡","🤔","😏","🙄","😴","🤯","🥳","😇","🤗","😬","🫡","😵","🤫","🫢","😲","🥸","🤓","😈","👻","💩","🤡"] },
-  { tab: "👋", list: ["👋","🤝","👍","👎","❤️","🔥","💯","✨","🎉","🙏","💪","🫶","👀","💀","🤌","🫠","💅","🫣","🤭","😮‍💨","🫰","🤙","✌️","🤞","🫵","👏","🙌","🤲","🫱","🫲"] },
-  { tab: "🐶", list: ["🐶","🐱","🐻","🦊","🐼","🐨","🐯","🦁","🐸","🐧","🦋","🌸","🌈","⭐","🌙","☀️","🍕","🍔","🍦","🎮","🚀","🌍","🎵","🎶","🍜","🍣","🧋","🍩","🎂","🌺"] },
+  { tab:"😊", list:["😀","😂","🥰","😍","🤩","😎","🥺","😭","😤","😡","🤔","😏","🙄","😴","🤯","🥳","😇","🤗","😬","🫡","😵","🤫","🫢","😲","🥸","🤓","😈","👻","💩","🤡"] },
+  { tab:"👋", list:["👋","🤝","👍","👎","❤️","🔥","💯","✨","🎉","🙏","💪","🫶","👀","💀","🤌","🫠","💅","🫣","🤭","😮‍💨","🫰","🤙","✌️","🤞","🫵","👏","🙌","🤲","🫱","🫲"] },
+  { tab:"🐶", list:["🐶","🐱","🐻","🦊","🐼","🐨","🐯","🦁","🐸","🐧","🦋","🌸","🌈","⭐","🌙","☀️","🍕","🍔","🍦","🎮","🚀","🌍","🎵","🎶","🍜","🍣","🧋","🍩","🎂","🌺"] },
 ];
 
 const STICKER_PACKS = [
-  { tab: "😂", list: ["😂","😭","🥺","😍","🤩","😤","🥳","😎","🤯","🫡","💀","🫶","🤌","😮‍💨","🫠","🥹","😵‍💫","🤪","🧐","😤","🤬","🥶","🥵","🫨","🤑","😝","😜","🤣","😹","🙈"] },
-  { tab: "❤️", list: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","♥️","🫀","❤️‍🔥","❤️‍🩹","💋","😘","🥰","😻","💑","👫","🌹","🫦"] },
-  { tab: "🎉", list: ["🎉","🎊","🎈","🎁","🏆","🥇","⭐","🌟","💫","✨","🔥","💥","🌈","🎯","🎮","🎵","🎶","🍕","🍔","🎂","🥂","🍾","🎠","🎪","🎭","🎨","🎬","🎤","🎸","🥳"] },
+  { tab:"😂", list:["😂","😭","🥺","😍","🤩","😤","🥳","😎","🤯","🫡","💀","🫶","🤌","😮‍💨","🫠","🥹","😵‍💫","🤪","🧐","😤","🤬","🥶","🥵","🫨","🤑","😝","😜","🤣","😹","🙈"] },
+  { tab:"❤️", list:["❤️","🧡","💛","💚","💙","💜","🖤","🤍","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","♥️","🫀","❤️‍🔥","❤️‍🩹","💋","😘","🥰","😻","💑","👫","🌹","🫦"] },
+  { tab:"🎉", list:["🎉","🎊","🎈","🎁","🏆","🥇","⭐","🌟","💫","✨","🔥","💥","🌈","🎯","🎮","🎵","🎶","🍕","🍔","🎂","🥂","🍾","🎠","🎪","🎭","🎨","🎬","🎤","🎸","🥳"] },
 ];
 
 const QUICK_REACTIONS = ["❤️","😂","👍","😮","😢","🔥","🥺","🤯"];
 
-// ─── Состояние ─────────────────────────────────────────────
 let username  = localStorage.getItem("chat_username") || "";
 let myAvatar  = localStorage.getItem("chat_avatar")   || "";
-let myStatus  = JSON.parse(localStorage.getItem("chat_status") || "null") || LOCATIONS[0];
+let myStatus  = JSON.parse(localStorage.getItem("chat_status")||"null") || LOCATIONS[0];
 let emojiTab  = 0;
 let stickerTab= 0;
 const avatarCache = {};
 
-// ─── DOM ───────────────────────────────────────────────────
-const loginScreen       = document.getElementById("login-screen");
-const chatScreen        = document.getElementById("chat-screen");
-const nameInputEl       = document.getElementById("name-input");
-const passInputEl       = document.getElementById("pass-input");
-const loginBtn          = document.getElementById("login-btn");
-const loginError        = document.getElementById("login-error");
-const loginAvatarPick   = document.getElementById("login-avatar-pick");
-const loginAvatarInput  = document.getElementById("login-avatar-input");
+// DOM
+const $ = id => document.getElementById(id);
+const loginScreen   = $("login-screen");
+const chatScreen    = $("chat-screen");
+const nameInput     = $("name-input");
+const loginBtn      = $("login-btn");
+const loginError    = $("login-error");
+const loginAvPick   = $("login-avatar-pick");
+const loginAvInput  = $("login-avatar-input");
+const messagesEl    = $("messages");
+const emptyState    = $("empty-state");
+const msgInput      = $("msg-input");
+const sendBtn       = $("send-btn");
+const otherAvImg    = $("other-av-img");
+const otherAvLetter = $("other-av-letter");
+const otherName     = $("other-name");
+const otherStatus   = $("other-status");
+const onlineDot     = $("online-dot");
+const profileBtn    = $("my-profile-btn");
+const myAvImg       = $("my-av-img");
+const myAvLetter    = $("my-av-letter");
+const displayUser   = $("display-username");
+const profileModal  = $("profile-modal");
+const modalAvPrev   = $("modal-av-preview");
+const modalAvImg    = $("modal-av-img");
+const modalAvLetter = $("modal-av-letter");
+const modalAvInput  = $("modal-av-input");
+const modalSave     = $("modal-save");
+const modalCancel   = $("modal-cancel");
+const statusBtn     = $("status-btn");
+const statusDD      = $("status-dropdown");
+const statusEmoji   = $("my-status-emoji");
+const statusLabel   = $("my-status-label");
+const emojiBtnEl    = $("emoji-btn");
+const stickerBtnEl  = $("sticker-btn");
+const emojiPanel    = $("emoji-panel");
+const stickerPanel  = $("sticker-panel");
+const emojiTabsEl   = $("emoji-tabs");
+const stickerTabsEl = $("sticker-tabs");
+const emojiGridEl   = $("emoji-grid");
+const stickerGridEl = $("sticker-grid");
+const reactionPopup = $("reaction-popup");
 
-const messagesEl        = document.getElementById("messages");
-const emptyState        = document.getElementById("empty-state");
-const msgInputEl        = document.getElementById("msg-input");
-const sendBtn           = document.getElementById("send-btn");
+// Utils
+const fmtTime = ts => new Date(ts).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+const initial = n => n ? n[0].toUpperCase() : "?";
+const slot    = n => "s_" + (n.charCodeAt(0) % 4);
 
-const otherAvatarWrap   = document.getElementById("other-avatar-wrap");
-const otherAvatarImg    = document.getElementById("other-avatar-img");
-const otherAvatarLetter = document.getElementById("other-avatar-letter");
-const otherNameEl       = document.getElementById("other-name");
-const otherStatusEl     = document.getElementById("other-status");
-
-const myProfileBtn      = document.getElementById("my-profile-btn");
-const myAvatarImg       = document.getElementById("my-avatar-img");
-const myAvatarLetter    = document.getElementById("my-avatar-letter");
-const displayUsername   = document.getElementById("display-username");
-
-const profileModal      = document.getElementById("profile-modal");
-const modalAvatarPreview= document.getElementById("modal-avatar-preview");
-const modalAvatarImg    = document.getElementById("modal-avatar-img");
-const modalAvatarLetter = document.getElementById("modal-avatar-letter");
-const modalAvatarInput  = document.getElementById("modal-avatar-input");
-const modalNameInput    = document.getElementById("modal-name-input");
-const modalSaveBtn      = document.getElementById("modal-save-btn");
-const modalCancelBtn    = document.getElementById("modal-cancel-btn");
-
-const statusBtn         = document.getElementById("status-btn");
-const statusDropdown    = document.getElementById("status-dropdown");
-const myStatusEmoji     = document.getElementById("my-status-emoji");
-const myStatusLabel     = document.getElementById("my-status-label");
-
-const emojiBtnEl        = document.getElementById("emoji-btn");
-const stickerBtnEl      = document.getElementById("sticker-btn");
-const emojiPanel        = document.getElementById("emoji-panel");
-const stickerPanel      = document.getElementById("sticker-panel");
-const emojiTabsEl       = document.getElementById("emoji-tabs");
-const stickerTabsEl     = document.getElementById("sticker-tabs");
-const emojiGridEl       = document.getElementById("emoji-grid");
-const stickerGridEl     = document.getElementById("sticker-grid");
-const reactionPopup     = document.getElementById("reaction-popup");
-
-// ─── Утилиты ───────────────────────────────────────────────
-const formatTime = ts => new Date(ts).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-const initial    = name => name ? name[0].toUpperCase() : "?";
-
-function compressImage(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
+function compress(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => {
       const img = new Image();
       img.onload = () => {
-        const size = 120;
-        const canvas = document.createElement("canvas");
-        canvas.width = size; canvas.height = size;
-        const ctx = canvas.getContext("2d");
+        const c = document.createElement("canvas");
+        c.width = c.height = 120;
         const min = Math.min(img.width, img.height);
-        const sx  = (img.width  - min) / 2;
-        const sy  = (img.height - min) / 2;
-        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
-        resolve(canvas.toDataURL("image/jpeg", 0.7));
+        c.getContext("2d").drawImage(img,(img.width-min)/2,(img.height-min)/2,min,min,0,0,120,120);
+        res(c.toDataURL("image/jpeg",.7));
       };
       img.src = e.target.result;
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(file);
   });
 }
 
-function applyAvatar(imgEl, letterEl, avatarB64, name) {
-  if (avatarB64) {
-    imgEl.src = avatarB64;
-    imgEl.hidden = false;
-    letterEl.style.display = "none";
+function applyAv(imgEl, letEl, b64, name) {
+  if (b64) {
+    imgEl.src = b64; imgEl.style.display = "block";
+    letEl.style.display = "none";
   } else {
-    imgEl.hidden = true;
-    letterEl.style.display = "";
-    letterEl.textContent = initial(name);
+    imgEl.style.display = "none";
+    letEl.style.display = "";
+    letEl.textContent = initial(name);
   }
 }
 
-// ─── Инициализация ─────────────────────────────────────────
+// Init
 function init() {
-  buildStatusDropdown();
-  buildEmojiPicker();
-  buildStickerPicker();
-  applyAvatar(myAvatarImg, myAvatarLetter, myAvatar, username);
-  displayUsername.textContent = username || "...";
-  myStatusEmoji.textContent   = myStatus.emoji;
-  myStatusLabel.textContent   = myStatus.label;
+  buildStatus();
+  buildEmoji();
+  buildStickers();
+  applyAv(myAvImg, myAvLetter, myAvatar, username);
+  displayUser.textContent = username || "...";
+  statusEmoji.textContent = myStatus.emoji;
+  statusLabel.textContent = myStatus.label;
 
-  loginAvatarPick.addEventListener("click", () => loginAvatarInput.click());
-  loginAvatarInput.addEventListener("change", async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const b64 = await compressImage(file);
-    myAvatar = b64;
-    let img = loginAvatarPick.querySelector("img");
+  loginAvPick.onclick = () => loginAvInput.click();
+  loginAvInput.onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    myAvatar = await compress(f);
+    loginAvPick.style.borderColor = "#c0192a";
+    let img = loginAvPick.querySelector("img");
     if (!img) {
       img = document.createElement("img");
-      loginAvatarPick.appendChild(img);
-      loginAvatarPick.querySelector(".avatar-pick-icon").style.display = "none";
-      loginAvatarPick.querySelector(".avatar-pick-hint").style.display = "none";
+      Object.assign(img.style,{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"});
+      loginAvPick.appendChild(img);
+      loginAvPick.querySelectorAll("span").forEach(s=>s.style.display="none");
     }
-    img.src = b64;
-    Object.assign(img.style, { position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", borderRadius:"50%" });
-  });
+    img.src = myAvatar;
+  };
 
   if (username) showChat();
 }
 
-// ─── Вход с паролем ────────────────────────────────────────
-loginBtn.addEventListener("click", doLogin);
-nameInputEl.addEventListener("keydown", e => { if (e.key === "Enter") passInputEl.focus(); });
-passInputEl.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+// Login
+loginBtn.onclick = doLogin;
+nameInput.onkeydown = e => { if (e.key==="Enter") doLogin(); };
 
 function doLogin() {
-  const login    = nameInputEl.value.trim();
-  const password = passInputEl.value.trim();
-
-  const account = ACCOUNTS[login];
-  if (!account) {
-    loginError.textContent = "Неверный логин";
-    loginError.style.display = "block";
-    return;
-  }
-  if (account.password !== password) {
-    loginError.textContent = "Неверный пароль";
-    loginError.style.display = "block";
-    return;
-  }
-
+  const name = nameInput.value.trim();
+  if (!name) { loginError.textContent="Введите имя"; loginError.style.display="block"; return; }
   loginError.style.display = "none";
-  username = account.displayName;
-  localStorage.setItem("chat_username", username);
+  username = name;
+  localStorage.setItem("chat_username", name);
   if (myAvatar) localStorage.setItem("chat_avatar", myAvatar);
   showChat();
 }
@@ -192,362 +157,304 @@ function doLogin() {
 function showChat() {
   loginScreen.classList.remove("active");
   chatScreen.classList.add("active");
-  applyAvatar(myAvatarImg, myAvatarLetter, myAvatar, username);
-  displayUsername.textContent = username;
-  subscribeMessages();
-  subscribeProfiles();
+  applyAv(myAvImg, myAvLetter, myAvatar, username);
+  displayUser.textContent = username;
+  subMessages();
+  subProfiles();
   publishProfile();
-  setupOnlinePresence();
+  setupOnline();
 }
 
-// ─── Онлайн-присутствие ────────────────────────────────────
-function setupOnlinePresence() {
-  const onlineRef = ref(db, `online/${username}`);
-  set(onlineRef, true);
-  onDisconnect(onlineRef).remove();
-
-  // Слушаем онлайн собеседника
-  onValue(ref(db, "online"), snap => {
-    const data = snap.val() || {};
-    const otherOnline = Object.keys(data).some(u => u !== username);
-    const dot = document.getElementById("online-dot");
-    if (dot) {
-      dot.style.background = otherOnline ? "#22c55e" : "#55556a";
-      dot.title = otherOnline ? "онлайн" : "не в сети";
-    }
-    // Обновить статус текст
-    const currentOtherName = otherNameEl.textContent;
-    if (currentOtherName && currentOtherName !== "Ожидание...") {
-      const statusText = otherStatusEl.textContent.split("•")[0].trim();
-      otherStatusEl.innerHTML = `${statusText} <span id="online-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${otherOnline ? '#22c55e' : '#55556a'};margin-left:4px;vertical-align:middle;"></span>`;
-    }
+// Online
+function setupOnline() {
+  const oRef = ref(db, `online/${username}`);
+  set(oRef, true);
+  onDisconnect(oRef).remove();
+  onValue(ref(db,"online"), snap => {
+    const d = snap.val() || {};
+    const on = Object.keys(d).some(u => u !== username);
+    onlineDot.style.background = on ? "#ef4444" : "#3a1828";
+    onlineDot.style.boxShadow  = on ? "0 0 6px #ef444488" : "none";
   });
 }
 
-// ─── Профиль ───────────────────────────────────────────────
+// Profile
 function publishProfile() {
   if (!username) return;
-  set(ref(db, `profiles/${username}`), {
-    name:   username,
-    avatar: myAvatar || "",
-    ...myStatus,
-    ts: Date.now(),
-  });
+  set(ref(db,`profiles/${slot(username)}`), { name:username, avatar:myAvatar||"", ...myStatus, ts:Date.now() });
 }
 
-function subscribeProfiles() {
-  onValue(ref(db, "profiles"), snap => {
-    const data = snap.val() || {};
-    const others = Object.values(data).filter(p => p.name !== username);
-    if (others.length > 0) {
+function subProfiles() {
+  onValue(ref(db,"profiles"), snap => {
+    const others = Object.values(snap.val()||{}).filter(p=>p.name!==username);
+    if (others.length) {
       const o = others[0];
-      otherNameEl.textContent = o.name;
-      const isOnline = document.getElementById("online-dot");
-      const onlineDotHtml = isOnline ? isOnline.outerHTML : `<span id="online-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#55556a;margin-left:4px;vertical-align:middle;"></span>`;
-      otherStatusEl.innerHTML = `${o.emoji || ""} ${o.label || ""}`.trim() + " " + onlineDotHtml;
-      applyAvatar(otherAvatarImg, otherAvatarLetter, o.avatar, o.name);
-      avatarCache[o.name] = o.avatar || "";
+      otherName.textContent   = o.name;
+      otherStatus.textContent = `${o.emoji||""} ${o.label||""}`.trim() || "онлайн";
+      applyAv(otherAvImg, otherAvLetter, o.avatar, o.name);
+      avatarCache[o.name] = o.avatar||"";
     } else {
-      otherNameEl.textContent = "Ожидание...";
-      otherStatusEl.innerHTML = `нет собеседника`;
-      applyAvatar(otherAvatarImg, otherAvatarLetter, "", "?");
+      otherName.textContent   = "Ожидание...";
+      otherStatus.textContent = "нет собеседника";
+      applyAv(otherAvImg, otherAvLetter, "", "?");
     }
   });
 }
 
-// ─── Профиль модалка ───────────────────────────────────────
-myProfileBtn.addEventListener("click", openProfileModal);
-modalCancelBtn.addEventListener("click", () => profileModal.classList.add("hidden"));
-profileModal.addEventListener("click", e => { if (e.target === profileModal) profileModal.classList.add("hidden"); });
-
-function openProfileModal() {
-  modalNameInput.value = username;
-  modalNameInput.disabled = true; // имя менять нельзя — это логин
-  applyAvatar(modalAvatarImg, modalAvatarLetter, myAvatar, username);
-  profileModal.classList.remove("hidden");
-}
-
-modalAvatarPreview.addEventListener("click", () => modalAvatarInput.click());
-modalAvatarInput.addEventListener("change", async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const b64 = await compressImage(file);
-  myAvatar = b64;
-  applyAvatar(modalAvatarImg, modalAvatarLetter, b64, username);
-});
-
-modalSaveBtn.addEventListener("click", async () => {
-  if (myAvatar) localStorage.setItem("chat_avatar", myAvatar);
-  applyAvatar(myAvatarImg, myAvatarLetter, myAvatar, username);
+// Profile modal
+profileBtn.onclick = () => { applyAv(modalAvImg,modalAvLetter,myAvatar,username); profileModal.classList.remove("hidden"); };
+modalCancel.onclick = () => profileModal.classList.add("hidden");
+profileModal.onclick = e => { if(e.target===profileModal) profileModal.classList.add("hidden"); };
+modalAvPrev.onclick = () => modalAvInput.click();
+modalAvInput.onchange = async e => {
+  const f=e.target.files[0]; if(!f) return;
+  myAvatar = await compress(f);
+  applyAv(modalAvImg,modalAvLetter,myAvatar,username);
+};
+modalSave.onclick = () => {
+  if (myAvatar) localStorage.setItem("chat_avatar",myAvatar);
+  applyAv(myAvImg,myAvLetter,myAvatar,username);
   publishProfile();
   profileModal.classList.add("hidden");
-});
+};
 
-// ─── Статус ────────────────────────────────────────────────
-function buildStatusDropdown() {
+// Status
+function buildStatus() {
   LOCATIONS.forEach(loc => {
     const btn = document.createElement("button");
-    btn.className = "status-option" + (loc.id === myStatus.id ? " active" : "");
+    btn.className = "status-opt" + (loc.id===myStatus.id?" active":"");
     btn.dataset.id = loc.id;
-    btn.innerHTML = `<span class="loc-emoji">${loc.emoji}</span><span>${loc.label}</span>${loc.id === myStatus.id ? '<span class="check">✓</span>' : ""}`;
-    statusDropdown.appendChild(btn);
+    btn.innerHTML = `<span style="font-size:16px">${loc.emoji}</span><span>${loc.label}</span>${loc.id===myStatus.id?'<span style="margin-left:auto;color:#ff8096">✓</span>':""}`;
+    statusDD.appendChild(btn);
   });
-  statusDropdown.addEventListener("click", e => {
-    const btn = e.target.closest(".status-option");
+  statusDD.addEventListener("click", e => {
+    const btn = e.target.closest("button[data-id]");
     if (!btn) return;
-    const loc = LOCATIONS.find(l => l.id === btn.dataset.id);
+    const loc = LOCATIONS.find(l=>l.id===btn.dataset.id);
     if (loc) setStatus(loc);
   });
 }
 
-statusBtn.addEventListener("click", e => { e.stopPropagation(); statusDropdown.classList.toggle("open"); });
+statusBtn.onclick = e => { e.stopPropagation(); statusDD.classList.toggle("open"); };
 
 function setStatus(loc) {
   myStatus = loc;
   localStorage.setItem("chat_status", JSON.stringify(loc));
-  myStatusEmoji.textContent = loc.emoji;
-  myStatusLabel.textContent = loc.label;
-  document.querySelectorAll(".status-option").forEach(btn => {
-    const btnLoc = LOCATIONS.find(l => l.id === btn.dataset.id);
-    if (!btnLoc) return;
-    const active = btnLoc.id === loc.id;
-    btn.classList.toggle("active", active);
-    btn.innerHTML = `<span class="loc-emoji">${btnLoc.emoji}</span><span>${btnLoc.label}</span>${active ? '<span class="check">✓</span>' : ""}`;
+  statusEmoji.textContent = loc.emoji;
+  statusLabel.textContent = loc.label;
+  statusDD.querySelectorAll("button[data-id]").forEach(btn => {
+    const bl = LOCATIONS.find(l=>l.id===btn.dataset.id);
+    if (!bl) return;
+    const active = bl.id===loc.id;
+    btn.className = "status-opt"+(active?" active":"");
+    btn.innerHTML = `<span style="font-size:16px">${bl.emoji}</span><span>${bl.label}</span>${active?'<span style="margin-left:auto;color:#ff8096">✓</span>':""}`;
   });
-  statusDropdown.classList.remove("open");
+  statusDD.classList.remove("open");
   publishProfile();
 }
 
-// ─── Сообщения ─────────────────────────────────────────────
-function subscribeMessages() {
-  onValue(ref(db, "messages"), snap => {
-    const data = snap.val() || {};
-    const msgs = Object.entries(data)
-      .map(([id, v]) => ({ id, ...v }))
-      .sort((a, b) => a.ts - b.ts);
-    renderMessages(msgs);
+// Messages
+function subMessages() {
+  onValue(ref(db,"messages"), snap => {
+    const msgs = Object.entries(snap.val()||{})
+      .map(([id,v])=>({id,...v}))
+      .sort((a,b)=>a.ts-b.ts);
+    renderMsgs(msgs);
   });
 }
 
-function renderMessages(msgs) {
+function renderMsgs(msgs) {
   messagesEl.innerHTML = "";
-  if (!msgs.length) { messagesEl.appendChild(emptyState); emptyState.style.display = "block"; return; }
+  if (!msgs.length) { messagesEl.appendChild(emptyState); emptyState.style.display="flex"; return; }
   emptyState.style.display = "none";
 
-  let i = 0;
-  while (i < msgs.length) {
-    const author  = msgs[i].author;
-    const isMine  = author === username;
-    const group   = [];
-    while (i < msgs.length && msgs[i].author === author) { group.push(msgs[i]); i++; }
+  let i=0;
+  while (i<msgs.length) {
+    const author=msgs[i].author, isMine=author===username, group=[];
+    while (i<msgs.length && msgs[i].author===author) group.push(msgs[i++]);
 
-    const groupEl = document.createElement("div");
-    groupEl.className = `msg-group ${isMine ? "mine" : "theirs"}`;
+    const grp = document.createElement("div");
+    grp.className = "msg-group msg-anim " + (isMine?"mine":"theirs");
 
-    const authorEl = document.createElement("div");
-    authorEl.className = "msg-author";
-    authorEl.textContent = author;
-    groupEl.appendChild(authorEl);
+    const nameEl = document.createElement("div");
+    nameEl.className = "msg-author";
+    nameEl.textContent = author;
+    grp.appendChild(nameEl);
 
-    const av     = isMine ? myAvatar : (avatarCache[author] || "");
+    const av = isMine ? myAvatar : (avatarCache[author]||"");
 
     group.forEach((msg, idx) => {
-      const isSticker = msg.type === "sticker";
-      const rowEl = document.createElement("div");
-      rowEl.className = "msg-row";
+      const isSticker = msg.type==="sticker";
+      const row = document.createElement("div");
+      row.className = "msg-row";
 
-      const avatarEl = document.createElement("div");
-      avatarEl.className = "msg-avatar" + (idx < group.length - 1 ? " invisible" : "");
+      const avEl = document.createElement("div");
+      avEl.className = "msg-av" + (idx<group.length-1?" invisible":"");
       if (av) {
-        const img = document.createElement("img");
-        img.src = av; img.alt = author;
-        avatarEl.appendChild(img);
+        const img=document.createElement("img");
+        img.src=av; img.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;";
+        avEl.appendChild(img);
       } else {
-        avatarEl.textContent = initial(author);
+        avEl.textContent = initial(author);
       }
 
       const bubble = document.createElement("div");
-      bubble.className = "msg-bubble" + (isSticker ? " sticker" : (idx > 0 ? " grouped" : ""));
+      bubble.className = "msg-bubble" + (isSticker?" sticker":(idx>0?" grouped":""));
       bubble.textContent = msg.text;
-
-      // Фикс реакций: сохраняем msgId в closure через data-атрибут
       bubble.dataset.msgId = msg.id;
-      bubble.addEventListener("click", e => {
-        e.stopPropagation();
-        openReactionPopup(bubble.dataset.msgId, bubble);
-      });
-      bubble.addEventListener("contextmenu", e => {
-        e.preventDefault();
-        openReactionPopup(bubble.dataset.msgId, bubble);
-      });
+      bubble.onclick = e => { e.stopPropagation(); openReaction(bubble.dataset.msgId, bubble); };
+      bubble.oncontextmenu = e => { e.preventDefault(); openReaction(bubble.dataset.msgId, bubble); };
 
-      const delBtn = document.createElement("button");
-      delBtn.className = "delete-btn";
-      delBtn.textContent = "✕";
-      delBtn.title = "Удалить";
-      delBtn.addEventListener("click", () => deleteMsg(msg.id));
+      const del = document.createElement("button");
+      del.className = "del-btn"; del.textContent="✕"; del.title="Удалить";
+      del.onclick = () => deleteMsg(msg.id);
 
-      if (isMine) {
-        rowEl.appendChild(delBtn);
-        rowEl.appendChild(bubble);
-        rowEl.appendChild(avatarEl);
-      } else {
-        rowEl.appendChild(avatarEl);
-        rowEl.appendChild(bubble);
-        rowEl.appendChild(delBtn);
-      }
-      groupEl.appendChild(rowEl);
+      if (isMine) { row.appendChild(del); row.appendChild(bubble); row.appendChild(avEl); }
+      else        { row.appendChild(avEl); row.appendChild(bubble); row.appendChild(del); }
+      grp.appendChild(row);
     });
 
     group.forEach(msg => {
-      const rRow = document.createElement("div");
-      rRow.className = "reactions-row";
-      rRow.id = `reactions-${msg.id}`;
-      groupEl.appendChild(rRow);
+      const rr = document.createElement("div");
+      rr.className="reactions-row"; rr.id=`r-${msg.id}`;
+      grp.appendChild(rr);
     });
 
-    const timeEl = document.createElement("div");
-    timeEl.className = "msg-time";
-    timeEl.textContent = formatTime(group[group.length - 1].ts);
-    groupEl.appendChild(timeEl);
-
-    messagesEl.appendChild(groupEl);
+    const time = document.createElement("div");
+    time.className="msg-time";
+    time.textContent = fmtTime(group[group.length-1].ts);
+    grp.appendChild(time);
+    messagesEl.appendChild(grp);
   }
 
-  subscribeReactions(msgs);
+  subReactions(msgs);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// ─── Реакции ───────────────────────────────────────────────
-function subscribeReactions(msgs) {
-  onValue(ref(db, "reactions"), snap => {
-    const data = snap.val() || {};
+// Reactions
+function subReactions(msgs) {
+  onValue(ref(db,"reactions"), snap => {
+    const data = snap.val()||{};
     msgs.forEach(msg => {
-      const rowEl = document.getElementById(`reactions-${msg.id}`);
-      if (!rowEl) return;
-      rowEl.innerHTML = "";
+      const row = document.getElementById(`r-${msg.id}`);
+      if (!row) return;
+      row.innerHTML = "";
       const safeId = msg.id.toString().replace(/\./g,"_");
-      const msgReactions = data[safeId] || {};
-      Object.entries(msgReactions).forEach(([emoji, users]) => {
-        if (!users || !Object.keys(users).length) return;
-        const userList = Object.values(users);
-        const iMine    = userList.includes(username);
+      Object.entries(data[safeId]||{}).forEach(([emoji,users]) => {
+        if (!users||!Object.keys(users).length) return;
+        const ul = Object.values(users);
         const chip = document.createElement("button");
-        chip.className = "reaction-chip" + (iMine ? " mine-reaction" : "");
-        chip.innerHTML = `${emoji} <span class="count">${userList.length}</span>`;
-        const capturedMsgId = msg.id;
-        chip.addEventListener("click", () => toggleReaction(capturedMsgId, emoji));
-        rowEl.appendChild(chip);
+        chip.className = "reaction-chip"+(ul.includes(username)?" mine-reaction":"");
+        chip.innerHTML = `${emoji}<span class="cnt">${ul.length}</span>`;
+        const mid = msg.id;
+        chip.onclick = () => toggleReaction(mid,emoji);
+        row.appendChild(chip);
       });
     });
   });
 }
 
-function openReactionPopup(msgId, anchor) {
-  reactionPopup.innerHTML = "";
-  reactionPopup.dataset.msgId = msgId;
+function openReaction(msgId, anchor) {
+  reactionPopup.innerHTML="";
   QUICK_REACTIONS.forEach(emoji => {
-    const btn = document.createElement("button");
-    btn.textContent = emoji;
-    const capturedMsgId = msgId;
-    btn.addEventListener("click", () => { toggleReaction(capturedMsgId, emoji); closeReactionPopup(); });
+    const btn=document.createElement("button");
+    btn.textContent=emoji;
+    const mid=msgId;
+    btn.onclick=()=>{ toggleReaction(mid,emoji); closeReaction(); };
     reactionPopup.appendChild(btn);
   });
-  const rect = anchor.getBoundingClientRect();
-  reactionPopup.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 320)) + "px";
-  reactionPopup.style.top  = (rect.top - 56) + "px";
+  const rect=anchor.getBoundingClientRect();
+  reactionPopup.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-320))+"px";
+  reactionPopup.style.top=(rect.top-52)+"px";
   reactionPopup.classList.remove("hidden");
 }
 
-function closeReactionPopup() { reactionPopup.classList.add("hidden"); }
+function closeReaction(){ reactionPopup.classList.add("hidden"); }
 
-async function toggleReaction(msgId, emoji) {
-  const safeId = msgId.toString().replace(/\./g,"_");
-  const path   = `reactions/${safeId}/${emoji}/${username}`;
-  const snap   = await get(ref(db, path));
-  if (snap.exists()) { await remove(ref(db, path)); }
-  else               { await set(ref(db, path), true); }
+async function toggleReaction(msgId,emoji) {
+  const safeId=msgId.toString().replace(/\./g,"_");
+  const path=`reactions/${safeId}/${emoji}/${username}`;
+  const snap=await get(ref(db,path));
+  if (snap.exists()) await remove(ref(db,path));
+  else               await set(ref(db,path),true);
 }
 
 async function deleteMsg(id) {
-  await remove(ref(db, `messages/${id}`));
-  await remove(ref(db, `reactions/${id.toString().replace(/\./g,"_")}`));
+  await remove(ref(db,`messages/${id}`));
+  await remove(ref(db,`reactions/${id.toString().replace(/\./g,"_")}`));
 }
 
-// ─── Отправка ──────────────────────────────────────────────
-msgInputEl.addEventListener("input", () => {
-  sendBtn.classList.toggle("ready", msgInputEl.value.trim().length > 0);
-  msgInputEl.style.height = "auto";
-  msgInputEl.style.height = Math.min(msgInputEl.scrollHeight, 120) + "px";
-});
-msgInputEl.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-sendBtn.addEventListener("click", () => sendMessage());
+// Send
+msgInput.oninput = () => {
+  sendBtn.classList.toggle("ready", msgInput.value.trim().length>0);
+  msgInput.style.height="auto";
+  msgInput.style.height=Math.min(msgInput.scrollHeight,100)+"px";
+};
+msgInput.onkeydown = e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();} };
+sendBtn.onclick = ()=>sendMsg();
 
-async function sendMessage(text, type = "text") {
-  const content = (typeof text === "string") ? text : msgInputEl.value.trim();
-  if (!content || !username) return;
-  await push(ref(db, "messages"), { author: username, text: content, type: type || "text", ts: Date.now() });
-  if (typeof text !== "string") {
-    msgInputEl.value = ""; msgInputEl.style.height = "auto";
-    sendBtn.classList.remove("ready"); msgInputEl.focus();
+async function sendMsg(text,type="text") {
+  const content = (typeof text==="string") ? text : msgInput.value.trim();
+  if (!content||!username) return;
+  await push(ref(db,"messages"),{author:username,text:content,type:type||"text",ts:Date.now()});
+  if (typeof text!=="string") {
+    msgInput.value=""; msgInput.style.height="auto";
+    sendBtn.classList.remove("ready"); msgInput.focus();
   }
 }
 
-// ─── Эмодзи ────────────────────────────────────────────────
-function buildEmojiPicker() {
-  EMOJI_CATS.forEach((cat, i) => {
-    const btn = document.createElement("button");
-    btn.className = "panel-tab" + (i === 0 ? " active" : "");
-    btn.textContent = cat.tab;
-    btn.addEventListener("click", () => { emojiTab = i; renderEmojiGrid(); updateTabUI(emojiTabsEl, i); });
+// Emoji
+function buildEmoji() {
+  EMOJI_CATS.forEach((cat,i)=>{
+    const btn=document.createElement("button");
+    btn.className="panel-tab"+(i===0?" active":"");
+    btn.textContent=cat.tab;
+    btn.onclick=()=>{ emojiTab=i; renderEmoji(); updateTabs(emojiTabsEl,i); };
     emojiTabsEl.appendChild(btn);
   });
-  renderEmojiGrid();
+  renderEmoji();
 }
-function renderEmojiGrid() {
-  emojiGridEl.innerHTML = "";
-  EMOJI_CATS[emojiTab].list.forEach(e => {
-    const btn = document.createElement("button");
-    btn.className = "emoji-btn"; btn.textContent = e;
-    btn.addEventListener("click", () => { msgInputEl.value += e; msgInputEl.focus(); sendBtn.classList.toggle("ready", msgInputEl.value.trim().length > 0); });
+function renderEmoji() {
+  emojiGridEl.innerHTML="";
+  EMOJI_CATS[emojiTab].list.forEach(e=>{
+    const btn=document.createElement("button");
+    btn.className="emoji-btn"; btn.textContent=e;
+    btn.onclick=()=>{ msgInput.value+=e; msgInput.focus(); sendBtn.classList.toggle("ready",msgInput.value.trim().length>0); };
     emojiGridEl.appendChild(btn);
   });
 }
-emojiBtnEl.addEventListener("click", e => { e.stopPropagation(); const open = !emojiPanel.classList.contains("hidden"); closeAllPickers(); if (!open) { emojiPanel.classList.remove("hidden"); emojiBtnEl.classList.add("active"); } });
+emojiBtnEl.onclick = e=>{ e.stopPropagation(); const o=!emojiPanel.classList.contains("open"); closeAll(); if(o){emojiPanel.classList.add("open");emojiBtnEl.classList.add("active");} };
 
-// ─── Стикеры ───────────────────────────────────────────────
-function buildStickerPicker() {
-  STICKER_PACKS.forEach((pack, i) => {
-    const btn = document.createElement("button");
-    btn.className = "panel-tab" + (i === 0 ? " active" : "");
-    btn.textContent = pack.tab;
-    btn.addEventListener("click", () => { stickerTab = i; renderStickerGrid(); updateTabUI(stickerTabsEl, i); });
+// Stickers
+function buildStickers() {
+  STICKER_PACKS.forEach((pack,i)=>{
+    const btn=document.createElement("button");
+    btn.className="panel-tab"+(i===0?" active":"");
+    btn.textContent=pack.tab;
+    btn.onclick=()=>{ stickerTab=i; renderStickers(); updateTabs(stickerTabsEl,i); };
     stickerTabsEl.appendChild(btn);
   });
-  renderStickerGrid();
+  renderStickers();
 }
-function renderStickerGrid() {
-  stickerGridEl.innerHTML = "";
-  STICKER_PACKS[stickerTab].list.forEach(s => {
-    const btn = document.createElement("button");
-    btn.className = "sticker-btn"; btn.textContent = s;
-    btn.addEventListener("click", () => { sendMessage(s, "sticker"); closeAllPickers(); });
+function renderStickers() {
+  stickerGridEl.innerHTML="";
+  STICKER_PACKS[stickerTab].list.forEach(s=>{
+    const btn=document.createElement("button");
+    btn.className="sticker-btn"; btn.textContent=s;
+    btn.onclick=()=>{ sendMsg(s,"sticker"); closeAll(); };
     stickerGridEl.appendChild(btn);
   });
 }
-stickerBtnEl.addEventListener("click", e => { e.stopPropagation(); const open = !stickerPanel.classList.contains("hidden"); closeAllPickers(); if (!open) { stickerPanel.classList.remove("hidden"); stickerBtnEl.classList.add("active"); } });
+stickerBtnEl.onclick = e=>{ e.stopPropagation(); const o=!stickerPanel.classList.contains("open"); closeAll(); if(o){stickerPanel.classList.add("open");stickerBtnEl.classList.add("active");} };
 
-// ─── Хелперы ───────────────────────────────────────────────
-function updateTabUI(container, activeIdx) {
-  container.querySelectorAll(".panel-tab").forEach((btn, i) => btn.classList.toggle("active", i === activeIdx));
-}
-function closeAllPickers() {
-  emojiPanel.classList.add("hidden"); stickerPanel.classList.add("hidden");
+function updateTabs(cont,idx){ cont.querySelectorAll(".panel-tab").forEach((b,i)=>b.classList.toggle("active",i===idx)); }
+function closeAll() {
+  emojiPanel.classList.remove("open"); stickerPanel.classList.remove("open");
   emojiBtnEl.classList.remove("active"); stickerBtnEl.classList.remove("active");
-  closeReactionPopup();
+  closeReaction();
 }
-document.addEventListener("click", () => { statusDropdown.classList.remove("open"); closeAllPickers(); });
-[emojiPanel, stickerPanel, statusDropdown, reactionPopup].forEach(el => el.addEventListener("click", e => e.stopPropagation()));
 
-// ─── Старт ─────────────────────────────────────────────────
+document.addEventListener("click",()=>{ statusDD.classList.remove("open"); closeAll(); });
+[emojiPanel,stickerPanel,statusDD,reactionPopup].forEach(el=>el.addEventListener("click",e=>e.stopPropagation()));
+
 init();
