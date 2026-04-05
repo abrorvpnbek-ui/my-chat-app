@@ -217,12 +217,155 @@ body {
 @media (max-width:768px) {
   .desktop-only { display:none !important; }
 }
+
+/* ═══ MOON INTRO ANIMATION ═══ */
+#moon-intro {
+  position:fixed; inset:0; z-index:999;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at center,#050a15,#000);
+  pointer-events:none;
+}
+#moon-intro.done { display:none; }
+.moon-orb {
+  width:120px; height:120px; border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #f9e287 0%, #dcc66e 40%, #8b6914 80%, #3a2a05 100%);
+  box-shadow:
+    0 0 40px rgba(220,198,110,.6),
+    0 0 100px rgba(220,198,110,.3),
+    inset -20px -10px 40px rgba(0,0,0,.5);
+  animation: moonEntry 2.4s cubic-bezier(.22,1,.36,1) forwards;
+  position:relative;
+}
+.moon-orb::before {
+  content:''; position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle at 25% 25%, rgba(255,255,255,.15) 0%, transparent 50%);
+}
+/* crater details */
+.moon-orb::after {
+  content:''; position:absolute; inset:0; border-radius:50%;
+  background:
+    radial-gradient(circle at 60% 40%, rgba(0,0,0,.3) 0%, transparent 15%),
+    radial-gradient(circle at 30% 60%, rgba(0,0,0,.25) 0%, transparent 12%),
+    radial-gradient(circle at 75% 65%, rgba(0,0,0,.2) 0%, transparent 10%);
+}
+.moon-glow-ring {
+  position:absolute; width:180px; height:180px; border-radius:50%;
+  border:1px solid rgba(220,198,110,.2);
+  animation: ringPulse 2.4s ease forwards;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+}
+.moon-glow-ring2 {
+  position:absolute; width:240px; height:240px; border-radius:50%;
+  border:1px solid rgba(220,198,110,.1);
+  animation: ringPulse2 2.4s ease forwards;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+}
+.moon-title {
+  position:absolute; bottom:-60px; left:50%; transform:translateX(-50%);
+  white-space:nowrap; font-family:'Space Grotesk',sans-serif;
+  font-size:13px; font-weight:700; letter-spacing:5px; text-transform:uppercase;
+  color:rgba(220,198,110,.8);
+  animation: titleFade 2.4s ease forwards;
+}
+@keyframes moonEntry {
+  0%   { transform:scale(0) translateY(60px); opacity:0; }
+  30%  { opacity:1; }
+  60%  { transform:scale(1.1) translateY(-10px); }
+  80%  { transform:scale(.95) translateY(5px); }
+  100% { transform:scale(1) translateY(0); opacity:1; }
+}
+@keyframes ringPulse {
+  0%   { transform:translate(-50%,-50%) scale(0); opacity:0; }
+  50%  { opacity:.8; }
+  100% { transform:translate(-50%,-50%) scale(1.3); opacity:0; }
+}
+@keyframes ringPulse2 {
+  0%   { transform:translate(-50%,-50%) scale(0); opacity:0; }
+  30%  { opacity:0; }
+  70%  { opacity:.5; }
+  100% { transform:translate(-50%,-50%) scale(1.4); opacity:0; }
+}
+@keyframes titleFade {
+  0%,40%  { opacity:0; transform:translateX(-50%) translateY(10px); }
+  60%     { opacity:1; transform:translateX(-50%) translateY(0); }
+  85%     { opacity:1; }
+  100%    { opacity:0; }
+}
+@keyframes introFadeOut {
+  0%   { opacity:1; }
+  100% { opacity:0; }
+}
+
+/* ═══ RAIN BUTTON ═══ */
+#rain-btn {
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  z-index:10; display:flex; align-items:center; gap:6px;
+  padding:5px 14px; border-radius:20px; cursor:pointer; border:none;
+  background:rgba(11,19,38,.7); border:1px solid rgba(220,198,110,.2);
+  color:rgba(220,198,110,.6); font-size:11px; font-family:'Space Grotesk',sans-serif;
+  letter-spacing:1.5px; text-transform:uppercase; transition:all .2s;
+  backdrop-filter:blur(10px);
+}
+#rain-btn:hover { border-color:rgba(220,198,110,.5); color:#dcc66e; }
+#rain-btn.active { background:rgba(220,198,110,.15); border-color:rgba(220,198,110,.6); color:#f9e287; }
+#rain-btn .rain-icon { font-size:14px; transition:transform .3s; }
+#rain-btn.active .rain-icon { animation:rainIconSpin .6s ease; }
+@keyframes rainIconSpin {
+  0%   { transform:rotate(0) scale(1); }
+  50%  { transform:rotate(180deg) scale(1.3); }
+  100% { transform:rotate(360deg) scale(1); }
+}
+
+/* ═══ FALLING OBJECTS (moon/comet rain) ═══ */
+.rain-obj {
+  position:fixed; top:-60px; z-index:5; pointer-events:none;
+  animation: fallDown var(--fall-dur) linear forwards;
+  font-size:var(--fall-size);
+  filter:drop-shadow(0 0 8px rgba(220,198,110,.6));
+}
+@keyframes fallDown {
+  0%   { transform:translateY(0) rotate(0deg); opacity:0; }
+  5%   { opacity:1; }
+  90%  { opacity:1; }
+  100% { transform:translateY(110vh) rotate(var(--fall-rot)); opacity:0; }
+}
+
+/* Rain type selector popup */
+#rain-picker {
+  position:absolute; top:44px; left:50%; transform:translateX(-50%);
+  z-index:50; display:none;
+  background:rgba(11,19,38,.97); border:1px solid rgba(220,198,110,.2);
+  border-radius:18px; padding:10px; gap:8px;
+  box-shadow:0 8px 40px rgba(0,0,0,.8); backdrop-filter:blur(20px);
+  white-space:nowrap;
+}
+#rain-picker.open { display:flex; }
+.rain-opt {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:8px 12px; border-radius:12px; cursor:pointer; border:1px solid transparent;
+  transition:all .15s; background:transparent;
+}
+.rain-opt:hover { background:rgba(220,198,110,.1); border-color:rgba(220,198,110,.3); }
+.rain-opt.chosen { background:rgba(220,198,110,.15); border-color:rgba(220,198,110,.5); }
+.rain-opt span:first-child { font-size:24px; }
+.rain-opt span:last-child { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:rgba(220,198,110,.5); font-family:'Space Grotesk',sans-serif; }
 </style>
 </head>
 <body>
 
 <!-- Star field -->
 <div class="star-field" id="stars"></div>
+
+<!-- ═══ MOON INTRO ═══ -->
+<div id="moon-intro">
+  <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+    <div class="moon-glow-ring"></div>
+    <div class="moon-glow-ring2"></div>
+    <div class="moon-orb">
+      <div class="moon-title">Личный чат</div>
+    </div>
+  </div>
+</div>
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
@@ -315,7 +458,29 @@ body {
     </div>
 
     <!-- Messages -->
-    <div id="messages" class="flex-1 custom-scrollbar px-4 py-4 flex flex-col gap-0.5" style="overflow-y:auto;">
+    <div id="messages" class="flex-1 custom-scrollbar px-4 py-4 flex flex-col gap-0.5" style="overflow-y:auto;position:relative;">
+
+      <!-- Rain button -->
+      <button id="rain-btn">
+        <span class="rain-icon">🌙</span>
+        <span>Дождь</span>
+      </button>
+      <!-- Rain type picker -->
+      <div id="rain-picker">
+        <button class="rain-opt chosen" data-type="moon">
+          <span>🌙</span><span>Луны</span>
+        </button>
+        <button class="rain-opt" data-type="comet">
+          <span>☄️</span><span>Кометы</span>
+        </button>
+        <button class="rain-opt" data-type="star">
+          <span>⭐</span><span>Звёзды</span>
+        </button>
+        <button class="rain-opt" data-type="planet">
+          <span>🪐</span><span>Планеты</span>
+        </button>
+      </div>
+
       <div id="empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;margin:auto;gap:10px;text-align:center;">
         <span class="material-icons" style="font-size:48px;color:rgba(220,198,110,.1);">chat_bubble</span>
         <span style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(220,198,110,.2);font-family:'Space Grotesk',sans-serif;">Начните разговор</span>
@@ -376,6 +541,92 @@ function createComet() {
 }
 function spawnComets(){ createComet(); setTimeout(spawnComets,Math.random()*4000+2000); }
 setTimeout(spawnComets,3000);
+
+// ─── Moon intro ────────────────────────────────────────────
+const moonIntro = document.getElementById('moon-intro');
+setTimeout(() => {
+  moonIntro.style.animation = 'introFadeOut .8s ease forwards';
+  setTimeout(() => moonIntro.classList.add('done'), 800);
+}, 2600);
+
+// ─── Rain system ───────────────────────────────────────────
+const rainBtn    = document.getElementById('rain-btn');
+const rainPicker = document.getElementById('rain-picker');
+let rainActive   = false;
+let rainInterval = null;
+let rainType     = 'moon';
+
+const RAIN_EMOJIS = {
+  moon:   ['🌙','🌕','🌖','🌗','🌘','🌑','🌒','🌓','🌔'],
+  comet:  ['☄️','✨','💫','⚡','🌟'],
+  star:   ['⭐','🌟','💛','✨','🔆','🌠'],
+  planet: ['🪐','🌍','🌎','🌏','🔵','🔴','⚫'],
+};
+
+const RAIN_ICONS = { moon:'🌙', comet:'☄️', star:'⭐', planet:'🪐' };
+
+// Picker toggle
+rainBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  rainPicker.classList.toggle('open');
+});
+
+// Pick type
+rainPicker.querySelectorAll('.rain-opt').forEach(opt => {
+  opt.addEventListener('click', e => {
+    e.stopPropagation();
+    rainType = opt.dataset.type;
+    rainPicker.querySelectorAll('.rain-opt').forEach(o=>o.classList.remove('chosen'));
+    opt.classList.add('chosen');
+    rainBtn.querySelector('.rain-icon').textContent = RAIN_ICONS[rainType];
+    rainPicker.classList.remove('open');
+    // Start / restart rain
+    startRain();
+  });
+});
+
+function spawnRainObj() {
+  const emojis = RAIN_EMOJIS[rainType];
+  const emoji  = emojis[Math.floor(Math.random()*emojis.length)];
+  const el     = document.createElement('div');
+  el.className = 'rain-obj';
+  const size   = Math.random()*20+16;
+  const dur    = Math.random()*2500+1500;
+  const rot    = (Math.random()*720-360)+'deg';
+  el.style.cssText = `left:${Math.random()*100}vw;--fall-dur:${dur}ms;--fall-size:${size}px;--fall-rot:${rot};`;
+  el.textContent = emoji;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), dur+100);
+}
+
+function startRain() {
+  stopRain();
+  rainActive = true;
+  rainBtn.classList.add('active');
+  rainBtn.querySelector('span:last-child').textContent = 'Стоп';
+  // Burst of objects
+  for(let i=0;i<8;i++) setTimeout(spawnRainObj, i*80);
+  // Continuous
+  rainInterval = setInterval(()=>{ for(let i=0;i<3;i++) spawnRainObj(); }, 300);
+  // Auto-stop after 6 seconds
+  setTimeout(stopRain, 6000);
+}
+
+function stopRain() {
+  if (rainInterval) clearInterval(rainInterval);
+  rainInterval = null;
+  rainActive   = false;
+  rainBtn.classList.remove('active');
+  rainBtn.querySelector('span:last-child').textContent = 'Дождь';
+}
+
+rainBtn.addEventListener('click', () => {
+  if (rainPicker.classList.contains('open')) return;
+  if (rainActive) stopRain(); else startRain();
+});
+
+document.addEventListener('click', () => rainPicker.classList.remove('open'));
+rainPicker.addEventListener('click', e=>e.stopPropagation());
 </script>
 <script type="module" src="firebase.js"></script>
 <script type="module" src="app.js"></script>
